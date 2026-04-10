@@ -1,0 +1,24 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   SERVER_ID=jetson1 docker compose -f docker-compose.server.yml up --build
+#   SERVER_ID=jetson2 SERVER_PORT=50053 docker compose -f docker-compose.server.yml up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  inference-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    environment:
+      SERVER_ID: ${SERVER_ID:-server-remote}
+      SERVER_PORT: "50052"
+      ARTIFICIAL_DELAY_MS: ${ARTIFICIAL_DELAY_MS:-0}
+      ARTIFICIAL_DELAY_MAX_MS: ${ARTIFICIAL_DELAY_MAX_MS:-0}
+      OUTPUT_ROWS: ${OUTPUT_ROWS:-6}
+      OUTPUT_COLS: ${OUTPUT_COLS:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "${SERVER_PORT:-50052}:50052"
+    restart: unless-stopped

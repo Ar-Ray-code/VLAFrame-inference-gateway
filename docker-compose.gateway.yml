@@ -1,0 +1,27 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   BACKEND_SERVERS="jetson1=192.168.1.101:50052,jetson2=192.168.1.102:50052" \
+#     docker compose -f docker-compose.gateway.yml up --build
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gateway
+    environment:
+      GATEWAY_PORT: "50051"
+      BACKEND_SERVERS: ${BACKEND_SERVERS:?BACKEND_SERVERS must be set (e.g. server1=192.168.1.101:50052,server2=192.168.1.102:50052)}
+      HEALTH_CHECK_INTERVAL_S: ${HEALTH_CHECK_INTERVAL_S:-5}
+      REQUEST_TIMEOUT_S: ${REQUEST_TIMEOUT_S:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # TLS config
+      # TLS_ENABLED: "false"
+      # TLS_CA_CERT: "/certs/ca.crt"
+      # TLS_CLIENT_CERT: "/certs/client.crt"
+      # TLS_CLIENT_KEY: "/certs/client.key"
+    ports:
+      - "${GATEWAY_PORT:-50051}:50051"
+    restart: unless-stopped

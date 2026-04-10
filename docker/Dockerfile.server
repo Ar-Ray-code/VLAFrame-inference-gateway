@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY proto/ proto/
+COPY server/ server/
+COPY generated/ generated/
+
+RUN python -m grpc_tools.protoc \
+      -I proto \
+      --python_out=generated \
+      --grpc_python_out=generated \
+      proto/inference.proto \
+    && touch generated/__init__.py \
+    && sed -i 's/^import inference_pb2/from generated import inference_pb2/' \
+         generated/inference_pb2_grpc.py
+
+ENV PYTHONPATH=/app
+ENV SERVER_HOST=0.0.0.0
+ENV SERVER_PORT=50052
+ENV SERVER_ID=server1
+
+EXPOSE 50052
+
+CMD ["python", "-m", "server.main"]

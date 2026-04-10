@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package inference.v1;
+
+// ─────────────────────────────────────────────────────────
+//  Data messages
+// ─────────────────────────────────────────────────────────
+
+message Image {
+  bytes data   = 1;   // raw RGB bytes or encoded (jpeg/png)
+  int32 width  = 2;
+  int32 height = 3;
+  string format = 4;  // "rgb" | "jpeg" | "png"
+}
+
+message PredictRequest {
+  string request_id         = 1;
+  int64  timestamp_ms       = 2;
+  repeated Image  images    = 3;
+  repeated float  position  = 4;
+  map<string, string> metadata = 5;
+}
+
+message PredictResponse {
+  string request_id            = 1;
+  int32  rows                  = 2;
+  int32  cols                  = 3;
+  repeated float data          = 4;   // flat row-major float array
+  string server_id             = 5;
+  double processing_time_ms    = 6;
+  string status                = 7;   // "ok" | "error"
+  map<string, string> metadata = 8;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Health check (standard gRPC health protocol style)
+// ─────────────────────────────────────────────────────────
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum Status {
+    UNKNOWN     = 0;
+    SERVING     = 1;
+    NOT_SERVING = 2;
+  }
+  Status status  = 1;
+  string message = 2;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Ping
+// ─────────────────────────────────────────────────────────
+
+message PingRequest {
+  string message = 1;
+}
+
+message PingResponse {
+  string message    = 1;
+  string server_id  = 2;
+  int64  timestamp_ms = 3;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Gateway-specific: list backend servers
+// ─────────────────────────────────────────────────────────
+
+message ListServersRequest {}
+
+message ServerInfo {
+  string server_id   = 1;
+  string address     = 2;
+  bool   healthy     = 3;
+  string last_check  = 4;   // ISO-8601
+}
+
+message ListServersResponse {
+  repeated ServerInfo servers      = 1;
+  int32               round_robin_index = 2;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Services
+// ─────────────────────────────────────────────────────────
+
+// Backend inference server (gateway <-> server1/server2)
+service InferenceService {
+  rpc Predict     (PredictRequest)      returns (PredictResponse);
+  rpc HealthCheck (HealthCheckRequest)  returns (HealthCheckResponse);
+  rpc Ping        (PingRequest)         returns (PingResponse);
+}
+
+// Gateway service (client <-> gateway)
+service GatewayService {
+  rpc Predict     (PredictRequest)      returns (PredictResponse);
+  rpc HealthCheck (HealthCheckRequest)  returns (HealthCheckResponse);
+  rpc Ping        (PingRequest)         returns (PingResponse);
+  rpc ListServers (ListServersRequest)  returns (ListServersResponse);
+}

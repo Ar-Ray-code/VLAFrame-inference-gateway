@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.env
+
+generated/inference_pb2*.py
+
+.pytest_cache/
+.coverage
+
+# IDE
+.vscode/
+.idea/

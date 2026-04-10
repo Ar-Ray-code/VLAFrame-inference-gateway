@@ -1,0 +1,27 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY proto/ proto/
+COPY gateway/ gateway/
+COPY generated/ generated/
+
+RUN python -m grpc_tools.protoc \
+      -I proto \
+      --python_out=generated \
+      --grpc_python_out=generated \
+      proto/inference.proto \
+    && touch generated/__init__.py \
+    && sed -i 's/^import inference_pb2/from generated import inference_pb2/' \
+         generated/inference_pb2_grpc.py
+
+ENV PYTHONPATH=/app
+ENV GATEWAY_HOST=0.0.0.0
+ENV GATEWAY_PORT=50051
+
+EXPOSE 50051
+
+CMD ["python", "-m", "gateway.main"]
